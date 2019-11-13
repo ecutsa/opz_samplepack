@@ -36,7 +36,7 @@ def init_pack():
 
 def create_directory(filenumber):
     try:
-        os.rmdir("./0"+filenumber)
+        os.rmdir("./"+filenumber)
     except OSError:
         pass
     try:
