@@ -14,7 +14,7 @@ pip3 install audiosegment
 
 ```
 - put the script in a folder full of samples
-- run it
+- run it: https://youtu.be/tRoomSW0900
 - copy the generated samplepack(s) in a drum slot of your opz
 - enjoy :)
 
