@@ -99,28 +99,25 @@ def create_pack(start, end, filenumber):
         file = open(outfile,"xb")
         file.write(content)
         file.close()
-        print(outfile, " has been created.")
+        print(outfile, "has been created.")
 
 tot_samples=len(fnmatch.filter(os.listdir(path), '*.wav'))
 
 for filename in glob.glob(os.path.join(path, '*.wav')):
-    lenght_seg=len(seg_final)
-    start[nb_sample]= lenght_seg
+    start[nb_sample]= len(seg_final)
     if nb_sample == 0:
         seg_final= audiosegment.from_file(filename).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
     else:
         seg_final+= audiosegment.from_file(filename).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
-    lenght_seg=len(seg_final)
-    end[nb_sample]=lenght_seg
+    end[nb_sample]=len(seg_final)
     seg_final+= silence
-    if lenght_seg > 12000:
+    if len(seg_final) > 12000:
         print("This sample pack is longer than 12 seconds and will not work")
         pass
     nb_sample += 1
     current_sample += 1
     if (current_sample % 24 == 0) | ((tot_samples-current_sample) == 0):
         filenumber = "{:02d}".format(nb_pack)
-        print(start, end)
         create_pack(start, end, filenumber)
         nb_pack += 1
         nb_sample = 0
