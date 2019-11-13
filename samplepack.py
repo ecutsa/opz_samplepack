@@ -20,7 +20,7 @@ path = '.'
 nb_sample=0
 nb_pack=1
 current_sample=0
-silence_duration = 50 # silence between samples in milliseconds
+silence_duration = 5 # silence between samples in milliseconds
 silence = audiosegment.silent(silence_duration).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
 ratio= 178966 #ratio for drumv3
 start = [0] * 24 # create an array of 24 elements for the starts points
@@ -111,14 +111,16 @@ for filename in glob.glob(os.path.join(path, '*.wav')):
     else:
         seg_final+= audiosegment.from_file(filename).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
     lenght_seg=len(seg_final)
+    end[nb_sample]=lenght_seg
+    seg_final+= silence
     if lenght_seg > 12000:
         print("This sample pack is longer than 12 seconds and will not work")
         pass
-    end[nb_sample]=lenght_seg
     nb_sample += 1
     current_sample += 1
     if (current_sample % 24 == 0) | ((tot_samples-current_sample) == 0):
-        filenumber='0'+str(nb_pack)
+        filenumber = "{:02d}".format(nb_pack)
+        print(start, end)
         create_pack(start, end, filenumber)
         nb_pack += 1
         nb_sample = 0
