@@ -26,13 +26,19 @@ ratio= 178966 #ratio for drumv3
 start = [0] * 24 # create an array of 24 elements for the starts points
 end = [1] * 24 # create an array of 24 elements for the ends points
 current_seg = []
-seg_final = []
+too_long=0
 
 def init_pack():
+    global start
+    global end
+    global current_seg
+    global nb_sample
+    global too_long
     start = [0] *24
     end = [1] * 24
-    current_seg = []
-    seg_final = []
+    current_seg =audiosegment.silent(1).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
+    nb_sample=0
+    too_long=0
 
 def create_directory(filenumber):
     try:
@@ -60,12 +66,15 @@ def set_parity(forge_hex):
         pass # Odd
     return forge_hex
 
-def create_pack(start, end, filenumber):
+def create_pack(start, end):
+    global nb_pack
+
+    filenumber = "{:02d}".format(nb_pack)
     outfile='./'+filenumber+'/'+cwd[1]+filenumber+'.aif'
     create_directory(filenumber)
     start = format_array(start)
     end = format_array(end)
-    seg_final.export(outfile, format="aiff", parameters=["-c:a", "pcm_s16be"])
+    current_seg.export(outfile, format="aiff", parameters=["-c:a", "pcm_s16be"])
     filesize = os.path.getsize(outfile)
     with open(outfile, 'rb') as f:
         content = f.read()
@@ -99,26 +108,37 @@ def create_pack(start, end, filenumber):
         file = open(outfile,"xb")
         file.write(content)
         file.close()
-        print(outfile, "has been created.")
+        nb_pack += 1
+        print(outfile, "has been created with ",nb_sample," samples.")
+
+def check_lenght(current_seg, next_seg):
+    global too_long
+    seg_final=current_seg+next_seg
+    if seg_final > 12000:
+        if (nb_sample != 1):
+            print(filename, " is longer than 12 seconds and will not be packed")
+            init_pack()
+        else:
+            too_long = 1
+
 
 tot_samples=len(fnmatch.filter(os.listdir(path), '*.wav'))
 
 for filename in glob.glob(os.path.join(path, '*.wav')):
-    start[nb_sample]= len(seg_final)
-    if nb_sample == 0:
-        seg_final= audiosegment.from_file(filename).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
-    else:
-        seg_final+= audiosegment.from_file(filename).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
-    end[nb_sample]=len(seg_final)
-    seg_final+= silence
-    if len(seg_final) > 12000:
-        print("This sample pack is longer than 12 seconds and will not work")
-        pass
-    nb_sample += 1
-    current_sample += 1
-    if (current_sample % 24 == 0) | ((tot_samples-current_sample) == 0):
-        filenumber = "{:02d}".format(nb_pack)
-        create_pack(start, end, filenumber)
-        nb_pack += 1
-        nb_sample = 0
+    next_seg= audiosegment.from_file(filename).resample(sample_rate_Hz=44100, sample_width=2, channels=1)
+    check_lenght(len(current_seg), len(next_seg))
+
+    if too_long == 0:
+        start[nb_sample]= len(current_seg)
+        if nb_sample == 0:
+            current_seg= next_seg
+        else:
+            current_seg+= next_seg
+        end[nb_sample]=len(current_seg)
+        current_seg+= silence
+        nb_sample += 1
+        current_sample += 1
+
+    if (current_sample % 24 == 0) | ((tot_samples-current_sample) == 0) | (too_long == 1):
+        create_pack(start, end)
         init_pack()
